@@ -1,44 +1,115 @@
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
+// Plugins
+import Peer from "peerjs";
 // Components
 import Container from "../LayoutBlocks/Container/Container";
 import Col from "../LayoutBlocks/Col/Col";
 import Row from "../LayoutBlocks/Row/Row";
+import Board from "../Board/Board";
 
 export default function Gameboard() {
-  const [playerState, setPlayerState] = useState(1);
-  const [gamestate,setGamestate] = useState(true);
-  // Specify row and column length for the board then make a 2D array for the board
-  const rows = 7;
-  const columns = 6;
-  const emptyBoard = [];
+  const [isMyTurn, setIsMyTurn] = useState(true);
+  // Handle Connections
+  const [peerId, setPeerId] = useState(null);
+  const [peerConnection, setPeerConnection] = useState(null);
+  const [allowConnection, setAllowConnection] = useState(true);
 
-  for (let i = 0; i < rows; i++) {
-    const row = [];
-    for (let j = 0; j < columns; j++) {
-      row.push(null);
+  const peer = new Peer();
+  // Render Peer ID
+  useEffect(() => {
+    peer.on("open", function (id) {
+      setPeerId(id);
+    });
+  }, []);
+
+  // Runs on initial start, makes sure that the second player is unable to set a piece
+  peer.on("connection", function (conn) {
+    conn.on("data", function (data) {
+      console.log("connection function runs");
+      // Initial connection
+      if (data.setYourTurn !== undefined) {
+        setPeerConnection(conn);
+        setAllowConnection(false);
+        console.log(data);
+        console.log(data.message);
+        setIsMyTurn(data.setYourTurn);
+      }
+
+      // Recieving data when board updates
+      if (data.board !== null && data.playerState !== null) {
+        console.log("data recieved ");
+        console.log(data);
+        setBoard(data.board);
+        setPlayerState(data.playerState);
+        setIsMyTurn(data.setYourTurn);
+      }
+
+      return;
+    });
+  });
+
+  function connect() {
+    if (!allowConnection) {
+      return;
     }
-    emptyBoard.push(row);
+    let item = document.querySelector("#userID");
+    console.log(item.value);
+    let conn = peer.connect(item.value);
+    // on open will be launch when you successfully connect to PeerServer
+    conn.on("open", function () {
+      setPeerConnection(conn);
+      setAllowConnection(false);
+      conn.send({
+        message: "connection established, This page is the host",
+        setYourTurn: false,
+        board: null,
+        playerState: null,
+      });
+
+      console.log("Connection established");
+    });
   }
 
-  const [board, setBoard] = useState(emptyBoard);
+  // Handle Game logic
+  // Specify Board dimensions
+  const rows = 7;
+  const columns = 6;
+  // Hooks
+  const [playerState, setPlayerState] = useState(1);
+  const [gamestate, setGamestate] = useState(true);
+  const [board, setBoard] = useState(() => {
+    // Specify row and column length for the board then make a 2D array for the board
 
-  console.log(board);
+    const emptyBoard = [];
+
+    for (let i = 0; i < rows; i++) {
+      const row = [];
+      for (let j = 0; j < columns; j++) {
+        row.push(null);
+      }
+      emptyBoard.push(row);
+    }
+
+    return emptyBoard;
+  });
+
+  // console.log(board);
 
   function setPiece(colPos, rowPos) {
-    if(gamestate === false){
-        return
-    }
-    console.log("This cell is in column " + colPos + " and row " + rowPos);
 
-    const player1Color = "red";
-    const player2Color = "blue";
-    let value = "";
-    if (playerState === 1) {
-      value = player1Color;
-    } else {
-      value = player2Color;
+    if (gamestate === false) {
+      console.log("gamestate is false");
+      return;
     }
+    if (isMyTurn === false) {
+      console.log("not my turn");
+      return;
+    }
+
+    // Decide the piece's color value based on player state
+    const playerColors = ["red", "blue"];
+    let value = playerColors[playerState - 1];
+
     // Create a copy of the current board state
     const newBoard = [...board];
 
@@ -51,28 +122,41 @@ export default function Gameboard() {
 
     // Update the board state with the new array
     setBoard(newBoard);
+
     // check for win conditions, if so setgamestate to win
-    if(checkBoardState(board,value)){
-        console.log('yippee');
-        handlePlayerWin();
-        return
+    if (checkBoardState(board, value)) {
+      handlePlayerWin();
+      return;
     }
-    if (playerState === 1) {
-        setPlayerState(2);
-      } else {
-        setPlayerState(1);
-      }
+
+    // Issue: the peer that starts the connection with the connection function is unable to recieve board data.
+    // Switch to next player
+    let nextPlayer = playerState === 1 ? 2 : 1 
+    console.log('nextplayer' + nextPlayer)
+    setPlayerState(nextPlayer);
+    // Immediately disable the players ability to add pieces
+    setIsMyTurn(false);
+    // Send the board and player state data to the peer
+    console.log("heres the data we're sending");
+    console.log(board);
+    console.log('playerstate ' + nextPlayer);
+    peerConnection.send({
+      board: board,
+      playerState: nextPlayer,
+      setYourTurn: true,
+    });
   }
 
-  function handlePlayerWin(){
-    setGamestate(false)
-    console.log('player ' + playerState +' wins!')
+  function handlePlayerWin() {
+    setGamestate(false);
+    console.log("player " + playerState + " wins!");
   }
 
-  function checkBoardState(board,player){
-
+  function checkBoardState(board, player) {
     // Check horizontal
+    // Repeat for every row in the board
     for (let row = 0; row < board.length; row++) {
+      // Repeat for every column, -4 is needed as it would be impossible to win horizontally starting from the 3rd column (or col[2])
       for (let col = 0; col <= board[row].length - 4; col++) {
         if (
           board[row][col] === player &&
@@ -84,9 +168,11 @@ export default function Gameboard() {
         }
       }
     }
-  
+
     // Check vertical
+    // Repeat for every column
     for (let col = 0; col < board[0].length; col++) {
+      // Repeat for every row, -4 is needed as it would be impossible to win vertically due to not having enough spaces
       for (let row = 0; row <= board.length - 4; row++) {
         if (
           board[row][col] === player &&
@@ -98,7 +184,7 @@ export default function Gameboard() {
         }
       }
     }
-  
+
     // Check diagonals
     for (let row = 0; row <= board.length - 4; row++) {
       for (let col = 0; col <= board[row].length - 4; col++) {
@@ -111,7 +197,7 @@ export default function Gameboard() {
         ) {
           return true;
         }
-  
+
         // Check downward diagonal
         if (
           board[row][col + 3] === player &&
@@ -123,51 +209,23 @@ export default function Gameboard() {
         }
       }
     }
-  
+
     return false;
   }
-  
 
   return (
     <>
       <Container>
         <Row className={"justify-center"}>
           <Col className={"bg-red-400 text-red-500"}>
-            <div><p className="text-black">It is player {playerState}'s turn</p></div>
+            <input type="text" id="userID" />
+            <p>{peerId}</p>
+            <button onClick={connect}>Connect to this id</button>
+            <div>
+              <p className="text-black">It is player {playerState}'s turn</p>
+            </div>
             <div className="flex flex-col h-screen justify-center">
-              <div id="board">
-                {/* {boardSpaces.map((space, index) => (
-                  <div
-                    id={'cell'+ index}
-                    isFilled={false}
-                    key={index}
-                    onClick={() => setPiece(index)}
-                    className="border-4 aspect-square border-green-400 p-8 cursor-pointer"
-                  ></div>
-                ))} */}
-                {board.map((row, rowIndex) => (
-                  <div
-                    key={rowIndex}
-                    rowpos={rowIndex}
-                    className="flex border-4 border-green-500 w-full"
-                  >
-                    {row.map((cell, colIndex) => (
-                      <div
-                        key={colIndex}
-                        colpos={colIndex}
-                        value={cell}
-                        style={
-                          cell !== null
-                            ? { backgroundColor: cell, pointerEvents: "none" }
-                            : {}
-                        }
-                        className="border-2 border-white p-8 cursor-pointer"
-                        onClick={() => setPiece(colIndex, rowIndex)}
-                      ></div>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <Board board={board} setPiece={setPiece} />
             </div>
           </Col>
         </Row>
