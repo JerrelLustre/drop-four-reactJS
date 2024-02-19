@@ -12,7 +12,7 @@ export default function Gameboard() {
   // Handle Connections
   const [peerId, setPeerId] = useState(null);
   const [peerConnection, setPeerConnection] = useState(null);
-  const [allowConnection, setAllowConnection] = useState(true);
+  const [allowConnectionButton, setAllowConnectionButton] = useState(true);
 
   const peer = new Peer();
   // Render Peer ID
@@ -22,65 +22,48 @@ export default function Gameboard() {
     });
   }, []);
 
-  // Runs on initial start, makes sure that the second player is unable to set a piece
+// Handle data received from peer
   peer.on("connection", function (conn) {
     conn.on("data", function (data) {
       console.log("connection function running");
       console.log(data);
 
+      // Runs when receiving board data
+      if (data.sentBoardData === true) {
+        console.log("received board data");
+        setBoard(data.board);
+        setPlayerState(data.playerState);
+        setIsMyTurn(data.setYourTurn);
+        return;
+      }
+
       // Runs only on initial connection
-      if (data.initialConnect === true){
-        console.log('initial connection setup')
+      if (data.initialConnect === true) {
+        console.log("initial connection setup");
         console.log("peer id received:");
         console.log(data.id);
         let conn = peer.connect(data.id);
         conn.on("open", function () {
           setPeerConnection(conn);
         });
+        setAllowConnectionButton(false);
+        return;
       }
 
-            // Runs when receiving boar data
-      if (data.sentBoardData === true) {
-        console.log('received board data')
+      // Runs if the data says a player has won
+      if (data.playerHasWon === true) {
         setBoard(data.board);
-        setPlayerState(data.playerState);
-        setIsMyTurn(data.setYourTurn);
+        setPlayerState(data.winningPlayer);
+        handlePlayerWin();
       }
 
-      // Initial connection
-      // if (data.setYourTurn !== undefined) {
-      //   console.log(data)
-      //   console.log('peer id received:')
-      //   console.log(data.id)
-      //   let conn = peer.connect(data.id);
-      //   console.log(conn)
-      //   setPeerConnection(conn);
-      //   console.log('connected to...')
-      //   console.log(peerConnection)
-      //   setAllowConnection(false);
-
-      //   console.log(data.message);
-      //   setIsMyTurn(data.setYourTurn);
-      //   conn.send({
-      //     message: "Hello connector",
-      //   });
-      // }
-
-      // Receiving data when board updates
-      // if (data.board !== null && data.playerState !== null) {
-      //   // console.log("data received ");
-      //   // console.log(data);
-      //   setBoard(data.board);
-      //   setPlayerState(data.playerState);
-      //   setIsMyTurn(data.setYourTurn);
-      // }
 
       return;
     });
   });
 
   function connect() {
-    if (!allowConnection) {
+    if (!allowConnectionButton) {
       return;
     }
     let item = document.querySelector("#userID");
@@ -89,7 +72,7 @@ export default function Gameboard() {
     // on open will be launch when you successfully connect to PeerServer
     conn.on("open", function () {
       setPeerConnection(conn);
-      setAllowConnection(false);
+      setAllowConnectionButton(false);
       conn.send({
         id: peerId,
         message: "connection established, This page is the host",
@@ -160,6 +143,11 @@ export default function Gameboard() {
     // check for win conditions, if so setgamestate to win
     if (checkBoardState(board, value)) {
       handlePlayerWin();
+      peerConnection.send({
+        board: board,
+        playerHasWon: true,
+        winningPlayer: playerState,
+      });
       return;
     }
     // Issue: the peer that starts the connection with the connection function is unable to recieve board data.
