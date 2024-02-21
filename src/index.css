@@ -2,7 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* * {
+  outline: 1px solid red;
+} */
 
-*{
-    outline:1px solid red
-}
+
+  @font-face {
+    font-family: "FOT-SeuratProB";
+    src: url(./fonts/FOT-SeuratProB.otf) format("opentype");
+  }
+

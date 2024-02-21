@@ -6,6 +6,8 @@ import Container from "../LayoutBlocks/Container/Container";
 import Col from "../LayoutBlocks/Col/Col";
 import Row from "../LayoutBlocks/Row/Row";
 import Board from "../Board/Board";
+// Icons
+import { FaRegCopy } from "react-icons/fa6";
 
 export default function Gameboard() {
   const [isMyTurn, setIsMyTurn] = useState(true);
@@ -13,6 +15,8 @@ export default function Gameboard() {
   const [peerId, setPeerId] = useState(null);
   const [peerConnection, setPeerConnection] = useState(null);
   const [allowConnectionButton, setAllowConnectionButton] = useState(true);
+
+  const [showGame, setShowGame] = useState(false);
 
   const peer = new Peer();
   // Render Peer ID
@@ -22,7 +26,7 @@ export default function Gameboard() {
     });
   }, []);
 
-// Handle data received from peer
+  // Handle data received from peer
   peer.on("connection", function (conn) {
     conn.on("data", function (data) {
       console.log("connection function running");
@@ -46,6 +50,7 @@ export default function Gameboard() {
         conn.on("open", function () {
           setPeerConnection(conn);
         });
+        setShowGame(true);
         setAllowConnectionButton(false);
         return;
       }
@@ -57,7 +62,6 @@ export default function Gameboard() {
         handlePlayerWin();
       }
 
-
       return;
     });
   });
@@ -66,7 +70,7 @@ export default function Gameboard() {
     if (!allowConnectionButton) {
       return;
     }
-    let item = document.querySelector("#userID");
+    let item = document.querySelector("#userIDInput");
     console.log(item.value);
     let conn = peer.connect(item.value);
     // on open will be launch when you successfully connect to PeerServer
@@ -81,7 +85,7 @@ export default function Gameboard() {
         board: null,
         playerState: null,
       });
-
+      setShowGame(true);
       console.log("Connection established");
     });
   }
@@ -96,7 +100,7 @@ export default function Gameboard() {
   const columns = 6;
   // Hooks
   const [playerState, setPlayerState] = useState(1);
-  const [gamestate, setGamestate] = useState(true);
+  const [gamestate, setGamestate] = useState(false);
   const [board, setBoard] = useState(() => {
     // Specify row and column length for the board then make a 2D array for the board
 
@@ -250,24 +254,98 @@ export default function Gameboard() {
     return false;
   }
 
+  function copy() {
+    // Target ID element
+    let copyText = document.getElementById("userID");
+    if (copyText.textContent === "") {
+      return;
+    }
+
+    // Copy the text inside the element
+    navigator.clipboard.writeText(copyText.textContent);
+    window.alert("Code Copied");
+  }
+
   return (
-    <>
-      <Container>
-        <Row className={"justify-center"}>
-          <Col className={"bg-red-400 text-red-500"}>
-            <input type="text" id="userID" />
-            <p>{peerId}</p>
-            <button onClick={connect}>Connect to this id</button>
-            <button onClick={sendMessage}>send message</button>
-            <div>
-              <p className="text-black">It is player {playerState}'s turn</p>
-            </div>
-            <div className="flex flex-col h-screen justify-center">
-              <Board board={board} setPiece={setPiece} />
-            </div>
-          </Col>
-        </Row>
-      </Container>
-    </>
+    <main className="h-screen bg-[url('./assets/bg.jpg')] bg-repeat">
+      {!showGame && (
+        <Container>
+          <Row>
+            <Col className={"justify-center items-center flex flex-col w-full"}>
+              <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
+                <h1>
+                  Welcome To <span className="text-red">Drop</span>{" "}
+                  <span className="text-darkGreen">Four</span>
+                </h1>
+              </div>
+              <div className="w-full bg-white rounded-[1.125rem] overflow-clip font-seurat ">
+                {/* Header */}
+                <div className="text-white text-base bg-infoBorder">
+                  <h2 className="text-center py-2">Send Code To Connect</h2>
+                </div>
+                {/* End:Header */}
+                {/* Code Info */}
+                <div className="py-8 mx-2 flex flex-col gap-2">
+                  <p className=" text-xs mb-2">
+                    To play with someone, send them your lobby code and have
+                    them join with it.
+                  </p>
+                  <div className="flex rounded-[0.25rem] w-full overflow-clip mb-8">
+                    <p
+                      id="userID"
+                      className="w-full text-base break-all text-[#868686] bg-[#f2f2f2] border-4 pl-2"
+                    >
+                      {peerId}
+                    </p>
+                    <button onClick={copy} className="bg-[#81ABFF] ">
+                      <FaRegCopy className="fill-white w-[2.625rem] h-[2.625rem] p-1 " />
+                    </button>
+                  </div>
+                  {/* End:Code Info */}
+                  <div className="font-seurat">
+                    <label htmlFor="codeJoin" className="">
+                      Join Lobby Code
+                    </label>
+                    <input
+                      id="userIDInput"
+                      name="codeJoin"
+                      placeholder="Type Code Here to Join"
+                      className="text-[#454545] border-4 border-buttonBg pl-2 w-full rounded-[0.125rem] mt-2 "
+                    />
+                  </div>
+                </div>
+                {/* Join Button */}
+                <div className="text-white text-base bg-infoBorder flex justify-center py-2">
+                  <button
+                    className="font-seurat text-base text-white bg-buttonBg border-b-2 border-b-buttonStroke px-5 py-2 rounded-[0.5rem]"
+                    onClick={connect}
+                  >
+                    Join
+                  </button>
+                </div>
+                {/* End:Join Button */}
+              </div>
+              <p className="text-base text-center text-[#4D4D4D] font-seurat mt-10">Web App By Jerrel Lustre</p>
+            </Col>
+          </Row>
+        </Container>
+      )}
+      {showGame && (
+        <Container>
+          <Row className={"justify-center"}>
+            <Col className={"bg-red-400 text-red-500"}>
+              <button onClick={connect}>Connect to this id</button>
+              <button onClick={sendMessage}>send message</button>
+              <div>
+                <p className="text-black">It is player {playerState}'s turn</p>
+              </div>
+              <div className="flex flex-col h-screen justify-center">
+                <Board board={board} setPiece={setPiece} />
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      )}
+    </main>
   );
 }
