@@ -14,6 +14,7 @@ export default {
         red: "#FF5858",
         green: "#9DFF3B",
         darkGreen: "#42982D",
+        boardBg:"#6E95E1"
       },
     },
   },

@@ -6,6 +6,8 @@ import Container from "../LayoutBlocks/Container/Container";
 import Col from "../LayoutBlocks/Col/Col";
 import Row from "../LayoutBlocks/Row/Row";
 import Board from "../Board/Board";
+import Wave from "../Wave/Wave";
+import Alert from "../Alert/Alert";
 // Icons
 import { FaRegCopy } from "react-icons/fa6";
 
@@ -17,6 +19,7 @@ export default function Gameboard() {
   const [allowConnectionButton, setAllowConnectionButton] = useState(true);
 
   const [showGame, setShowGame] = useState(false);
+  const [gameWin, setGameWin] = useState(false);
 
   const peer = new Peer();
   // Render Peer ID
@@ -60,6 +63,12 @@ export default function Gameboard() {
         setBoard(data.board);
         setPlayerState(data.winningPlayer);
         handlePlayerWin();
+        return;
+      }
+
+      // Runs if the data say a player has tied
+      if (data.playersHaveTied === true) {
+        // setgameIstied
       }
 
       return;
@@ -100,7 +109,7 @@ export default function Gameboard() {
   const columns = 6;
   // Hooks
   const [playerState, setPlayerState] = useState(1);
-  const [gamestate, setGamestate] = useState(false);
+  const [gamestate, setGamestate] = useState(true);
   const [board, setBoard] = useState(() => {
     // Specify row and column length for the board then make a 2D array for the board
 
@@ -128,7 +137,7 @@ export default function Gameboard() {
     }
 
     // Decide the piece's color value based on player state
-    const playerColors = ["red", "blue"];
+    const playerColors = ["#FF5858", "#9DFF3B"];
     let value = playerColors[playerState - 1];
 
     // Create a copy of the current board state
@@ -190,6 +199,7 @@ export default function Gameboard() {
 
   function handlePlayerWin() {
     setGamestate(false);
+    setGameWin(true);
     console.log("player " + playerState + " wins!");
   }
 
@@ -267,84 +277,116 @@ export default function Gameboard() {
   }
 
   return (
-    <main className="h-screen bg-[url('./assets/bg.jpg')] bg-repeat">
+    <main className="h-screen w-screen relative overflow-clip bg-[url('./assets/bg.jpg')] bg-repeat">
       {!showGame && (
         <Container>
           <Row>
-            <Col className={"justify-center items-center flex flex-col w-full"}>
-              <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
-                <h1>
-                  Welcome To <span className="text-red">Drop</span>{" "}
-                  <span className="text-darkGreen">Four</span>
-                </h1>
-              </div>
-              <div className="w-full bg-white rounded-[1.125rem] overflow-clip font-seurat ">
-                {/* Header */}
-                <div className="text-white text-base bg-infoBorder">
-                  <h2 className="text-center py-2">Send Code To Connect</h2>
+            <Col
+              className={"justify-center items-center flex flex-col w-full "}
+            >
+              <div className="lg:max-w-[25rem]">
+                <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
+                  <h1>
+                    Welcome To <span className="text-red">Drop</span>{" "}
+                    <span className="text-darkGreen">Four</span>
+                  </h1>
                 </div>
-                {/* End:Header */}
-                {/* Code Info */}
-                <div className="py-8 mx-2 flex flex-col gap-2">
-                  <p className=" text-xs mb-2">
-                    To play with someone, send them your lobby code and have
-                    them join with it.
-                  </p>
-                  <div className="flex rounded-[0.25rem] w-full overflow-clip mb-8">
-                    <p
-                      id="userID"
-                      className="w-full text-base break-all text-[#868686] bg-[#f2f2f2] border-4 pl-2"
-                    >
-                      {peerId}
+                <div className="w-full bg-white rounded-[1.125rem] overflow-clip font-seurat ">
+                  {/* Header */}
+                  <div className="text-white text-base bg-infoBorder">
+                    <h2 className="text-center py-2">Send Code To Connect</h2>
+                  </div>
+                  {/* End:Header */}
+                  {/* Code Info */}
+                  <div className="py-8 mx-2 flex flex-col gap-2">
+                    <p className=" text-xs mb-2">
+                      To play with someone, send them your lobby code and have
+                      them join with it.
                     </p>
-                    <button onClick={copy} className="bg-[#81ABFF] ">
-                      <FaRegCopy className="fill-white w-[2.625rem] h-[2.625rem] p-1 " />
+                    <div className="flex rounded-[0.25rem] w-full overflow-clip mb-8">
+                      <p
+                        id="userID"
+                        className="w-full text-base break-all text-[#868686] bg-[#f2f2f2] border-4 pl-2"
+                      >
+                        {peerId}
+                      </p>
+                      <button onClick={copy} className="bg-[#81ABFF] ">
+                        <FaRegCopy className="fill-white w-[2.625rem] h-[2.625rem] p-1 " />
+                      </button>
+                    </div>
+                    {/* End:Code Info */}
+                    <div className="font-seurat">
+                      <label htmlFor="codeJoin" className="">
+                        Join Lobby Code
+                      </label>
+                      <input
+                        id="userIDInput"
+                        name="codeJoin"
+                        placeholder="Type Code Here to Join"
+                        className="text-[#454545] border-4 border-buttonBg pl-2 w-full rounded-[0.125rem] mt-2 "
+                      />
+                    </div>
+                  </div>
+                  {/* Join Button */}
+                  <div className="text-white text-base bg-infoBorder flex justify-center py-2">
+                    <button
+                      className="font-seurat text-base text-white bg-buttonBg border-b-2 border-b-buttonStroke px-5 py-2 rounded-[0.5rem]"
+                      onClick={connect}
+                    >
+                      Join
                     </button>
                   </div>
-                  {/* End:Code Info */}
-                  <div className="font-seurat">
-                    <label htmlFor="codeJoin" className="">
-                      Join Lobby Code
-                    </label>
-                    <input
-                      id="userIDInput"
-                      name="codeJoin"
-                      placeholder="Type Code Here to Join"
-                      className="text-[#454545] border-4 border-buttonBg pl-2 w-full rounded-[0.125rem] mt-2 "
-                    />
-                  </div>
+                  {/* End:Join Button */}
                 </div>
-                {/* Join Button */}
-                <div className="text-white text-base bg-infoBorder flex justify-center py-2">
-                  <button
-                    className="font-seurat text-base text-white bg-buttonBg border-b-2 border-b-buttonStroke px-5 py-2 rounded-[0.5rem]"
-                    onClick={connect}
-                  >
-                    Join
-                  </button>
-                </div>
-                {/* End:Join Button */}
+                <p className="text-base text-center text-[#4D4D4D] font-seurat mt-10">
+                  Web App By Jerrel Lustre
+                </p>
               </div>
-              <p className="text-base text-center text-[#4D4D4D] font-seurat mt-10">Web App By Jerrel Lustre</p>
             </Col>
           </Row>
         </Container>
       )}
       {showGame && (
-        <Container>
-          <Row className={"justify-center"}>
-            <Col className={"bg-red-400 text-red-500"}>
-              <button onClick={connect}>Connect to this id</button>
-              <button onClick={sendMessage}>send message</button>
-              <div>
-                <p className="text-black">It is player {playerState}'s turn</p>
-              </div>
-              <div className="flex flex-col h-screen justify-center">
-                <Board board={board} setPiece={setPiece} />
-              </div>
-            </Col>
-          </Row>
-        </Container>
+        <>
+          {isMyTurn && <Wave />}
+          {/* {GameWin && <Alert/>} */}
+          <Container className={"relative z-10"}>
+            <Row className={"justify-center"}>
+              <Col className={"h-screen flex justify-center flex-col"}>
+                <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
+                  {gameWin === false ? (
+                    <p>
+                      It is
+                      <span
+                        style={{
+                          color: playerState === 1 ? "#FF5858" : "#9DFF3B",
+                        }}
+                      >
+                        {" "}
+                        Player {playerState}'s{" "}
+                      </span>
+                      turn
+                    </p>
+                  ) : (
+                    <p>
+                      <span
+                        style={{
+                          color: playerState === 1 ? "#FF5858" : "#9DFF3B",
+                        }}
+                      >
+                        Player {playerState}
+                      </span>{" "}
+                      Wins!
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col justify-center">
+                  <Board board={board} setPiece={setPiece} />
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </>
       )}
     </main>
   );

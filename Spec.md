@@ -27,3 +27,8 @@ game board and player state update
 send game data to peer
 setMyturn to true
 Player 2 places piece
+
+
+Issues:
+Config connection so it work on firefox
+Simplify user code
