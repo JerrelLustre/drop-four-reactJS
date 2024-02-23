@@ -10,6 +10,8 @@ export default {
         background: "#F2E269",
         infoBorder: "#EC9A4E",
         buttonBg: "#4A79D6",
+        buttonBgClick: "#2d4c8a",
+        buttonBgHover: "#5d90f5",
         buttonStroke: "#121D37",
         red: "#FF5858",
         green: "#9DFF3B",

@@ -32,3 +32,22 @@ Player 2 places piece
 Issues:
 Config connection so it work on firefox
 Simplify user code
+
+
+Todo:
+<!-- Simplify user input code to 4-5 letters (Done) -->
+<!-- Add Favicon (Done) -->
+Add animation to coin drop 
+Add a replay button
+Add error states
+    When a player disconnectes: add a function that runs at the beginning of setpiece that checks if the connection is still valid
+Add tie state
+Change turn message to "Its Your Turn" and "Waiting for other player"
+<!-- Add feedback for message copy (Done) -->
+<!-- Add hover state to buttons (done) -->
+<!-- Add click state to buttons (done) -->
+<!-- Sort Code into components where possible -->
+Incorrect usage for "label for"
+
+
+Add animation to waves entering the screen (Low priority)
