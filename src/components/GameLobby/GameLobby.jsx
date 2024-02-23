@@ -60,9 +60,7 @@ export default function GameLobby({
 
                 {/* End:Code Info */}
                 <div className="font-seurat mt-8">
-                  <label htmlFor="codeJoin" className="">
-                    Join Lobby Code
-                  </label>
+                  <p>Join Lobby Code</p>
                   <input
                     id="userIDInput"
                     name="codeJoin"

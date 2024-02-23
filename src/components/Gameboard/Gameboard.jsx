@@ -2,13 +2,7 @@ import React, { useState, useEffect } from "react";
 // Plugins
 import Peer from "peerjs";
 // Components
-import Container from "../LayoutBlocks/Container/Container";
-import Col from "../LayoutBlocks/Col/Col";
-import Row from "../LayoutBlocks/Row/Row";
-import Board from "../Board/Board";
-import Wave from "../Wave/Wave";
 import Alert from "../Alert/Alert";
-import Button from "../Button/Button";
 import GameLobby from "../GameLobby/GameLobby";
 import GameScreen from "../GameScreen/GameScreen";
 
@@ -16,6 +10,8 @@ export default function Gameboard() {
   // Specify Board dimensions. Referred to by several functions that check the state of the board
   const rows = 7;
   const columns = 6;
+  // An array is used in order to easily reference and switch the color value using array indexes
+  const playerColors = ["#FF5858", "#9DFF3B"];
 
   /* -------------------------------------------------------------------------- */
   /*                                  Hooks                                     */
@@ -97,12 +93,8 @@ export default function Gameboard() {
   /* -------------------------------------------------------------------------- */
   peer.on("connection", function (conn) {
     conn.on("data", function (data) {
-      console.log("connection function running");
-      console.log(data);
-
       // Runs when receiving board data
       if (data.sentBoardData === true) {
-        console.log("received board data");
         setBoard(data.board);
         setPlayerState(data.playerState);
         setIsMyTurn(data.setYourTurn);
@@ -111,9 +103,6 @@ export default function Gameboard() {
 
       // Runs only on initial connection
       if (data.initialConnect === true) {
-        console.log("initial connection setup");
-        console.log("peer id received:");
-        console.log(data.id);
         let conn = peer.connect(data.id);
         conn.on("open", function () {
           setPeerConnection(conn);
@@ -162,12 +151,15 @@ export default function Gameboard() {
       setErrorMsg(
         "Connection timeout: Unable to establish connection. Please try again."
       );
+      setIsConnectionLoading(false);
       // Close the connection
       conn.close();
     }, 5000); // 5 seconds
 
     // Listener for when the connection has opened
     conn.on("open", function () {
+      console.log('h1')
+      setIsConnectionLoading(false);
       clearTimeout(timeoutId); // Clear the timeout
       setPeerConnection(conn); // Store connection data so we can send game data later
       setAllowConnectionButton(false); // Disable connection button when connection has been established
@@ -180,6 +172,7 @@ export default function Gameboard() {
         playerState: null,
       });
       setShowGame(true); //Switches to game screen
+      setIsMyTurn(false);
     });
 
     // Listener for when the connection has an error
@@ -203,8 +196,7 @@ export default function Gameboard() {
     }
 
     // Decide the piece's color value based on player state
-    // An array is used in order to easily reference and switch the color value using array indexes
-    const playerColors = ["#FF5858", "#9DFF3B"];
+
     let value = playerColors[playerState - 1];
 
     // Create a copy of the current board state
@@ -413,6 +405,7 @@ export default function Gameboard() {
           board={board}
           setPiece={setPiece}
           gameWin={gameWin}
+          playerColors={playerColors}
         />
       )}
     </main>

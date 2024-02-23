@@ -39,15 +39,16 @@ Todo:
 <!-- Add Favicon (Done) -->
 Add animation to coin drop 
 Add a replay button
+Issue: Both users see the orange wave on initial launch
 Add error states
     When a player disconnectes: add a function that runs at the beginning of setpiece that checks if the connection is still valid
 Add tie state
-Change turn message to "Its Your Turn" and "Waiting for other player"
+<!-- Change turn message to "Its Your Turn" and "Waiting for other player" (Done) -->
 <!-- Add feedback for message copy (Done) -->
 <!-- Add hover state to buttons (done) -->
 <!-- Add click state to buttons (done) -->
 <!-- Sort Code into components where possible -->
-Incorrect usage for "label for"
+<!-- Incorrect usage for "label for" -->
 
 
 Add animation to waves entering the screen (Low priority)
