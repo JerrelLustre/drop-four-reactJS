@@ -13,12 +13,13 @@ export default function GameLobby({
   copy,
   connect,
   isConnectionLoading,
-}) {
+})
+ {
   return (
     <Container>
       <Row>
         <Col className={"justify-center items-center flex flex-col w-full "}>
-          <div className="lg:max-w-[25rem]">
+          <div className="max-w-[25rem]">
             <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
               <h1>
                 Welcome To <span className="text-red">Drop</span>{" "}
@@ -85,6 +86,18 @@ export default function GameLobby({
             <p className="text-base text-center text-[#4D4D4D] font-seurat mt-10">
               Web App By Jerrel Lustre
             </p>
+            <div className="text-center text-[#4D4D4D] font-seurat mt-10">
+              <p>
+                Having trouble connecting? This game runs on PeerJS and may run
+                into issues if their server is down.
+              </p>
+              <p>
+                You can check their status with this{" "}
+                <a href="https://status.peerjs.com/" className="underline" target="_blank">
+                  link
+                </a>
+              </p>
+            </div>
           </div>
         </Col>
       </Row>

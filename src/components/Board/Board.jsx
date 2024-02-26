@@ -19,7 +19,7 @@ export default function Board({ board, setPiece }) {
                     ? { backgroundColor: cell, pointerEvents: "none" }
                     : { backgroundColor: "#f2f2f2" }
                 }
-                className="  p-4 lg:p-4 xl:p-6 2xl:p-8  cursor-pointer"
+                className="  p-3 md:p-4 lg:p-6 xl:p-6 2xl:p-8  cursor-pointer"
                 onClick={() => setPiece(colIndex, rowIndex)}
               ></div>
             </div>

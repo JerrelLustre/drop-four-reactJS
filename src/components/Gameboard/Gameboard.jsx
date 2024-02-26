@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 // Plugins
 import Peer from "peerjs";
 // Components
@@ -7,12 +7,6 @@ import GameLobby from "../GameLobby/GameLobby";
 import GameScreen from "../GameScreen/GameScreen";
 
 export default function Gameboard() {
-  // Specify Board dimensions. Referred to by several functions that check the state of the board
-  const rows = 7;
-  const columns = 6;
-  // An array is used in order to easily reference and switch the color value using array indexes
-  const playerColors = ["#FF5858", "#9DFF3B"];
-
   /* -------------------------------------------------------------------------- */
   /*                                  Hooks                                     */
   /* -------------------------------------------------------------------------- */
@@ -20,10 +14,30 @@ export default function Gameboard() {
   const [playerState, setPlayerState] = useState(1);
   // Specifies if the game is in play, disables player input
   const [gamestate, setGamestate] = useState(true);
+  // Specify Board dimensions. Referred to by several functions that check the state of the board
+  const rows = 7;
+  const columns = 6;
   // Initializes an empty board
   const [board, setBoard] = useState(() => {
-    // Specify row and column length for the board then make a 2D array for the board
+    return createEmptyBoard(rows, columns);
+  });
 
+  // Specifies if it is currently the user's turn
+  const [isMyTurn, setIsMyTurn] = useState(true);
+  // Switches between the lobby and game screen
+  const [showGame, setShowGame] = useState(false);
+  // Specifies if the game has been won
+  const [gameWin, setGameWin] = useState(false);
+  // Specifies if the game is tied
+  const [gameIsTied, setGameIsTied] = useState(false);
+
+  /* -------------------------------------------------------------------------- */
+  /*                              Initialize Board                              */
+  /* -------------------------------------------------------------------------- */
+
+  // An array is used in order to easily reference and switch the color value using array indexes
+  const playerColors = ["#FF5858", "#9DFF3B"];
+  function createEmptyBoard(rows, columns) {
     const emptyBoard = [];
 
     for (let i = 0; i < rows; i++) {
@@ -35,19 +49,17 @@ export default function Gameboard() {
     }
 
     return emptyBoard;
-  });
+  }
 
-  // Specifies if it is currently the user's turn
-  const [isMyTurn, setIsMyTurn] = useState(true);
-  // Switches between the lobby and game screen
-  const [showGame, setShowGame] = useState(false);
-  // Specifies if the game has been won
-  const [gameWin, setGameWin] = useState(false);
   /* -------------------------------------------------------------------------- */
   /*                             Handle Connections                             */
   /* -------------------------------------------------------------------------- */
+
+  const [peer, setPeer] = useState(null);
+
   // ID that peerJS uses to connect to
   const [peerId, setPeerId] = useState(null);
+
   // Store connection data. Referred to whenever we want to send data to peers
   const [peerConnection, setPeerConnection] = useState(null);
 
@@ -68,14 +80,18 @@ export default function Gameboard() {
   /* -------------------------------------------------------------------------- */
   /*              Generate Peer ID / Lobby Code used for connection             */
   /* -------------------------------------------------------------------------- */
-  const initialPeerId = generateRandomCode();
-  const peer = new Peer(initialPeerId);
-  // Render Peer ID
+
   useEffect(() => {
-    peer.on("open", function (id) {
-      setPeerId(id);
-    });
+    const code = generateRandomCode();
+    setPeer(new Peer(code));
   }, []);
+
+  useEffect(() => {
+    if (peer === null) {
+      return;
+    }
+    setPeerId(peer.id);
+  }, [peer]);
 
   function generateRandomCode() {
     // 5 Letter code for ID
@@ -91,43 +107,61 @@ export default function Gameboard() {
   /* -------------------------------------------------------------------------- */
   /*                Handler for when we receive data from a peer                */
   /* -------------------------------------------------------------------------- */
-  peer.on("connection", function (conn) {
-    conn.on("data", function (data) {
-      // Runs when receiving board data
-      if (data.sentBoardData === true) {
-        setBoard(data.board);
-        setPlayerState(data.playerState);
-        setIsMyTurn(data.setYourTurn);
-        return;
-      }
-
-      // Runs only on initial connection
-      if (data.initialConnect === true) {
-        let conn = peer.connect(data.id);
-        conn.on("open", function () {
-          setPeerConnection(conn);
-        });
-        setShowGame(true);
-        setAllowConnectionButton(false);
-        return;
-      }
-
-      // Runs if the data says a player has won
-      if (data.playerHasWon === true) {
-        setBoard(data.board);
-        setPlayerState(data.winningPlayer);
-        handlePlayerWin();
-        return;
-      }
-
-      // Runs if the data says a player has tied
-      if (data.playersHaveTied === true) {
-        // setgameIstied
-      }
-
+  useEffect(() => {
+    if (peer === null) {
       return;
+    }
+    peer.on("connection", function (conn) {
+      conn.on("data", function (data) {
+        // Runs when receiving board data
+        if (data.sentBoardData === true) {
+          setBoard(data.board);
+          setPlayerState(data.playerState);
+          setIsMyTurn(data.setYourTurn);
+          return;
+        }
+
+        // Runs only on initial connection
+        if (data.initialConnect === true) {
+          let conn = peer.connect(data.id);
+          conn.on("open", function () {
+            setPeerConnection(conn);
+          });
+          setShowGame(true);
+          setAllowConnectionButton(false);
+          createEmptyBoard(rows, columns);
+          return;
+        }
+
+        // Runs if the data says a player has won
+        if (data.playerHasWon === true) {
+          setBoard(data.board);
+          setPlayerState(data.winningPlayer);
+          handlePlayerWin();
+          return;
+        }
+
+        // Runs if the data says to reset the game
+        if (data.resetGame === true) {
+          setIsMyTurn(true);
+          setBoard(createEmptyBoard(rows, columns));
+          setGamestate(true);
+          setGameWin(false);
+          return;
+        }
+
+        // Runs if the data says a player has won
+        if (data.gameIsTied === true) {
+          setBoard(data.board);
+          setGameIsTied(true);
+          setGamestate(false);
+          return;
+        }
+
+        return;
+      });
     });
-  });
+  }, [peer]);
 
   /* -------------------------------------------------------------------------- */
   /*                  Connect to peer using inputted lobby code                 */
@@ -137,40 +171,44 @@ export default function Gameboard() {
     if (!allowConnectionButton) {
       return;
     }
+
     let item = document.querySelector("#userIDInput");
-    // Sanitize
-    let sanitizedValue = item.value.trim(); // Remove leading and trailing spaces
-    sanitizedValue = sanitizedValue.replace(/[^a-zA-Z0-9]/g, ""); // Remove non-alphanumeric characters
 
     let conn = peer.connect(item.value);
+
     // Show spinner
     setIsConnectionLoading(true);
-    // If connection cannot happen before the time finishes then throw an error
-    let timeoutId = setTimeout(() => {
-      setErrorState(true);
-      setErrorMsg(
-        "Connection timeout: Unable to establish connection. Please try again."
-      );
-      setIsConnectionLoading(false);
-      // Close the connection
-      conn.close();
-    }, 5000); // 5 seconds
+    // // If connection cannot happen before the time finishes then throw an error
+    // let timeoutId = setTimeout(() => {
+    //   setErrorState(true);
+    //   setErrorMsg(
+    //     "Connection timeout: Unable to establish connection. Please try again."
+    //   );
+    //   setIsConnectionLoading(false);
+    //   // Close the connection
+    //   conn.close();
+    // }, 5000); // 5 seconds
 
     // Listener for when the connection has opened
     conn.on("open", function () {
-      console.log('h1')
       setIsConnectionLoading(false);
-      clearTimeout(timeoutId); // Clear the timeout
+      // clearTimeout(timeoutId); // Clear the timeout
       setPeerConnection(conn); // Store connection data so we can send game data later
       setAllowConnectionButton(false); // Disable connection button when connection has been established
-      conn.send({
-        id: peerId,
-        message: "connection established, This page is the host",
-        initialConnect: true,
-        setYourTurn: false,
-        board: null,
-        playerState: null,
-      });
+      conn.send(
+        {
+          id: peerId,
+          message: "connection established, This page is the host",
+          initialConnect: true,
+          setYourTurn: false,
+          board: null,
+          playerState: null,
+        },
+        (error) => {
+          setErrorState(true);
+          setErrorMsg(error + "Connection error occurred. Returning to lobby");
+        }
+      );
       setShowGame(true); //Switches to game screen
       setIsMyTurn(false);
     });
@@ -187,11 +225,9 @@ export default function Gameboard() {
   /* -------------------------------------------------------------------------- */
   function setPiece(colPos) {
     if (gamestate === false) {
-      console.log("gamestate is false");
       return;
     }
     if (isMyTurn === false) {
-      console.log("not my turn");
       return;
     }
 
@@ -215,11 +251,36 @@ export default function Gameboard() {
     // check for win conditions, if so setgamestate to win
     if (checkBoardState(board, value)) {
       handlePlayerWin();
-      peerConnection.send({
-        board: board,
-        playerHasWon: true,
-        winningPlayer: playerState,
-      });
+      peerConnection.send(
+        {
+          board: board,
+          playerHasWon: true,
+          winningPlayer: playerState,
+        },
+        (error) => {
+          setErrorState(true);
+          setErrorMsg(error + "Connection error occurred. Returning to lobby");
+        }
+      );
+      return;
+    }
+
+    const nullCheck = board
+      .flatMap((row) => row)
+      .every((item) => item !== null);
+    if (nullCheck) {
+      setGamestate(false);
+      setGameIsTied(true);
+      peerConnection.send(
+        {
+          board: board,
+          gameIsTied: true,
+        },
+        (error) => {
+          setErrorState(true);
+          setErrorMsg(error + "Connection error occurred. Returning to lobby");
+        }
+      );
       return;
     }
 
@@ -333,13 +394,35 @@ export default function Gameboard() {
   }
 
   /* -------------------------------------------------------------------------- */
+  /*                                 Reset Game                                 */
+  /* -------------------------------------------------------------------------- */
+  function resetGame() {
+    // Reset Game board
+    setGamestate(true);
+    setGameWin(false);
+    setGameIsTied(false);
+    setIsMyTurn(false);
+    setBoard(createEmptyBoard(rows, columns));
+
+    peerConnection.send(
+      {
+        resetGame: true,
+      },
+      (error) => {
+        setErrorState(true);
+        setErrorMsg(error + "Connection error occurred. Returning to lobby");
+      }
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
   /*                      Show that the message was copied.                     */
   /* -------------------------------------------------------------------------- */
   /* ---------- Used when users press the copy button for the user ID --------- */
   function copy() {
     // Target ID element
     let copyText = document.getElementById("userID");
-    if (copyText.textContent === "") {
+    if (copyText.textContent === "null") {
       return;
     }
 
@@ -377,6 +460,7 @@ export default function Gameboard() {
   function clearError() {
     setErrorMsg("");
     setErrorState(false);
+    window.location.reload();
   }
 
   return (
@@ -405,7 +489,9 @@ export default function Gameboard() {
           board={board}
           setPiece={setPiece}
           gameWin={gameWin}
+          gameIsTied={gameIsTied}
           playerColors={playerColors}
+          resetGame={resetGame}
         />
       )}
     </main>

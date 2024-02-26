@@ -4,6 +4,7 @@ import Row from "../LayoutBlocks/Row/Row";
 import Col from "../LayoutBlocks/Col/Col";
 import Wave from "../Wave/Wave";
 import Board from "../Board/Board";
+import Button from "../Button/Button";
 
 export default function GameScreen({
   isMyTurn,
@@ -11,7 +12,9 @@ export default function GameScreen({
   board,
   setPiece,
   gameWin,
+  gameIsTied,
   playerColors,
+  resetGame,
 }) {
   return (
     <>
@@ -19,8 +22,8 @@ export default function GameScreen({
       <Container className={"relative z-10"}>
         <Row className={"justify-center"}>
           <Col className={"h-screen flex justify-center items-center flex-col"}>
-            <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] py-2 mb-10 mt-8">
-              {gameWin === false ? (
+            <div className="bg-white font-seurat text-xl w-full text-center rounded-[1.125rem] p-2 mb-10 mt-8">
+              {gameWin === false & gameIsTied=== false ? (
                 <p
                   style={{
                     color:
@@ -29,10 +32,10 @@ export default function GameScreen({
                   className="px-2"
                 >
                   {isMyTurn === true
-                    ? "Its Your Turn"
+                    ? "It's Your Turn"
                     : "Waiting for the other player to place their piece"}
                 </p>
-              ) : (
+              ) : gameWin === true & gameIsTied=== false ? (
                 <p>
                   <span
                     style={{
@@ -43,10 +46,16 @@ export default function GameScreen({
                   </span>{" "}
                   Wins!
                 </p>
-              )}
+              ) : null}
+              {gameIsTied === true ? <p>Game is tied</p> : null}
             </div>
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center items-center">
               <Board board={board} setPiece={setPiece} />
+              {gameWin || gameIsTied && (
+                <div className="mt-4">
+                  <Button label={"Play Again"} onClick={resetGame} />
+                </div>
+              )}
             </div>
           </Col>
         </Row>

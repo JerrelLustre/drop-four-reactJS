@@ -38,8 +38,8 @@ Todo:
 <!-- Simplify user input code to 4-5 letters (Done) -->
 <!-- Add Favicon (Done) -->
 Add animation to coin drop 
-Add a replay button
-Issue: Both users see the orange wave on initial launch
+<!-- Issue: Both users see the orange wave on initial launch -->
+<!-- Add a replay button -->
 Add error states
     When a player disconnectes: add a function that runs at the beginning of setpiece that checks if the connection is still valid
 Add tie state
@@ -52,3 +52,7 @@ Add tie state
 
 
 Add animation to waves entering the screen (Low priority)
+
+
+Lesson learned: if possible send flags to trigger processes on the user's end instead of processing data and then sending the data
+Example: send flag to reset game instead of sending data of a reset game
