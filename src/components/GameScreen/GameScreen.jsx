@@ -27,7 +27,7 @@ export default function GameScreen({
                 <p
                   style={{
                     color:
-                      playerState === 1 ? playerColors[0] : playerColors[1],
+                      playerState === 1 ? "#FF5858" : "#42982D",
                   }}
                   className="px-2"
                 >
@@ -39,7 +39,7 @@ export default function GameScreen({
                 <p>
                   <span
                     style={{
-                      color: playerState === 1 ? "#FF5858" : "#9DFF3B",
+                      color: playerState === 1 ? "#FF5858" : "#42982D",
                     }}
                   >
                     Player {playerState}
@@ -51,7 +51,7 @@ export default function GameScreen({
             </div>
             <div className="flex flex-col justify-center items-center">
               <Board board={board} setPiece={setPiece} />
-              {gameWin || gameIsTied && (
+              {(gameWin || gameIsTied) && (
                 <div className="mt-4">
                   <Button label={"Play Again"} onClick={resetGame} />
                 </div>
