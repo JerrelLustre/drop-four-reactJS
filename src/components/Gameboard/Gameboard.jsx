@@ -224,15 +224,16 @@ export default function Gameboard() {
   /*                  Update game board when user makes a move                  */
   /* -------------------------------------------------------------------------- */
   function setPiece(colPos) {
+    // Enabled in situations where the player shouldn't be allowed to update the board
     if (gamestate === false) {
       return;
     }
+    // Enabled when its not the player's turn
     if (isMyTurn === false) {
       return;
     }
 
     // Decide the piece's color value based on player state
-
     let value = playerColors[playerState - 1];
 
     // Create a copy of the current board state
@@ -248,7 +249,7 @@ export default function Gameboard() {
     // Update the board state with the new array
     setBoard(newBoard);
 
-    // check for win conditions, if so setgamestate to win
+    // check for win conditions, if so playerHasWon to true
     if (checkBoardState(board, value)) {
       handlePlayerWin();
       peerConnection.send(
@@ -265,6 +266,7 @@ export default function Gameboard() {
       return;
     }
 
+    // check for tie conditions, if so set gameIsTied to true
     const nullCheck = board
       .flatMap((row) => row)
       .every((item) => item !== null);
