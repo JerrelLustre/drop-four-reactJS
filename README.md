@@ -10,7 +10,6 @@ A web-based implementation of the classic game Connect Four, built with ReactJS.
 - [Installation](#installation)
 - [Usage](#usage)
 - [Future Improvements](#future-improvements)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Demo
